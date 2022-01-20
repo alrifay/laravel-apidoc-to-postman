@@ -12,10 +12,10 @@ class GeneratePostmanCollection
     private array $postmanData = [];
     private array $permissionsTokens = [];
 
-    public function __construct($projectFilePath, $dataFilePath)
+    public function __construct($project, $data)
     {
-        $this->apiData = json_decode(\File::get($dataFilePath), true);
-        $this->apiProject = json_decode(\File::get($projectFilePath), true);
+        $this->apiData = $data;
+        $this->apiProject = $project;
         $this->postmanData['$schema'] = 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json';
         $this->permissionsTokens = $this->apiProject['postman']['permissions'] ?? [];;
     }
@@ -64,7 +64,7 @@ class GeneratePostmanCollection
     private function setInfo()
     {
         $this->postmanData['info'] = [
-            'name'    => sprintf("!!%s!!", $this->apiProject['name'] ?? config('app.name')),
+            'name'    => $this->apiProject['name'] ?? config('app.name'),
             'schema'  => 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
             'version' => (string)now()->timestamp,
         ];
@@ -131,7 +131,7 @@ class GeneratePostmanCollection
 
     private function formatFormdataParameters(array $params): array
     {
-     return   collect($params)->mapToGroups(function (array $parameter, $index) {
+        return collect($params)->mapToGroups(function (array $parameter, $index) {
             $parent = \Str::before($parameter['field'], '.');
             return [$parent => $parameter];
         })->flatMap(function (Collection $parameter) {

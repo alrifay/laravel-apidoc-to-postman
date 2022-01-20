@@ -3,32 +3,32 @@
 namespace Alrifay\ApidocToPostman;
 
 use Illuminate\Console\Command;
+use Symfony\Component\Process\Process;
 
 class GeneratePostmanCollectionCommand extends Command
 {
     protected $signature = 'postman:collection ' .
-    '{--project=public/doc/api_project.json : Generated api_project.json file from apidoc} ' .
-    '{--data=public/doc/api_data.json : Generated api_data.json file from apidoc} ' .
     '{--out=public/doc/postman.json : Generated file path}';
 
     protected $description = 'Convert apidoc generated file to postman collection';
 
     public function handle(): int
     {
-        $projectFilePath = $this->option('project');
-        $dataFilePath = $this->option('data');
+        $process = new Process(['node', __DIR__ . '/generate.js'], base_path());
+        $process->setEnv([
+            'NODE_PATH' => base_path('node_modules')
+        ]);
+
+        if ($process->run() != self::SUCCESS) {
+            $this->error('Failed to generate api documentation');
+            echo $process->getErrorOutput();
+            return self::FAILURE;
+        }
+
+        $result = json_decode($process->getOutput(), associative: true);
         $outputFilePath = base_path($this->option('out'));
 
-        if (!\File::exists($projectFilePath)) {
-            $this->error("$projectFilePath not found.");
-            return static::INVALID;
-        }
-
-        if (!\File::exists($dataFilePath)) {
-            $this->error("$dataFilePath not found.");
-            return static::INVALID;
-        }
-        $generator = new GeneratePostmanCollection($projectFilePath, $dataFilePath);
+        $generator = new GeneratePostmanCollection($result['project'], $result['data']);
         $generator->generate()->save($outputFilePath);
         $this->info('The command was successful!');
         return static::SUCCESS;

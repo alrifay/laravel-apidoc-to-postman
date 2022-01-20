@@ -1,5 +1,5 @@
 {
-    "name": "alrifay/apidoc-to-postman",
+    "name": "alrifay/laravel-apidoc-to-postman",
     "description": "Apidoc generated file to postman",
     "autoload": {
         "psr-4": {
@@ -13,7 +13,7 @@
         }
     ],
     "require": {
-        "php": "^7.4|^8.0",
+        "php": "^8.0",
         "league/html-to-markdown": "^5.0"
     },
     "extra": {
