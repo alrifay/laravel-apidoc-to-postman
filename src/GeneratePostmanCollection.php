@@ -10,14 +10,12 @@ class GeneratePostmanCollection
     private array $apiData = [];
     private array $apiProject = [];
     private array $postmanData = [];
-    private array $permissionsTokens = [];
 
     public function __construct($project, $data)
     {
         $this->apiData = $data;
         $this->apiProject = $project;
         $this->postmanData['$schema'] = 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json';
-        $this->permissionsTokens = $this->apiProject['postman']['permissions'] ?? [];;
     }
 
     public function generate(): GeneratePostmanCollection
@@ -96,7 +94,6 @@ class GeneratePostmanCollection
             $isGetRequest = \Str::upper($api['type']) == 'GET';
             $parameters = $api['parameter']['fields']['Parameter'] ?? [];
             $permission = \Str::before($api['permission'][0]['name'] ?? '', ' ');
-
             if ($isGetRequest) {
                 $item['request']['url'] .= $this->formatQueryString($parameters);
             } else {
@@ -112,7 +109,7 @@ class GeneratePostmanCollection
                 });
             if ($authHeader) {
                 $default = \Str::afterLast($authHeader['content'], ' ');
-                $tokenName = $permission ? $this->permissionsTokens[$permission] ?? $default : $default;
+                $tokenName = $permission ? "{$permission}_token" : $default;
                 $item['request']['auth'] = [
                     'type'   => 'bearer',
                     'bearer' => [
