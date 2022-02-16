@@ -71,13 +71,13 @@ class GeneratePostmanCollection
     private function setItems()
     {
         $this->postmanData['item'] = collect($this->apiData)->mapToGroups(function (array $api) {
-            $name = str_replace('-', '.', str_replace('_', '', $api['group']));
+            $name = str_replace('-', '.', str_replace('_', ' ', $api['group']));
             return [$name => $api];
         })
             ->undot()
             ->map(function ($group, $groupName) {
                 return [
-                    'name' => str_replace('_', '', $groupName),
+                    'name' => trim($groupName),
                     'item' => $this->formatGroups($group),
                 ];
             })->values();
@@ -94,7 +94,7 @@ class GeneratePostmanCollection
         $items = [];
         foreach ($groups as $groupName => $group) {
             $items[] = [
-                'name' => $groupName,
+                'name' => trim($groupName),
                 'item' => $this->formatGroups($group),
             ];
         }
