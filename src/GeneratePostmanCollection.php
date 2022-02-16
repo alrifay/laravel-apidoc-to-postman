@@ -36,8 +36,8 @@ class GeneratePostmanCollection
     {
         $this->postmanData['variable'] = collect($this->apiProject['postman']['permissions'] ?? [])
             ->map(fn($variable, $permission) => [
-                "key"   => $variable,
-                "value" => '',
+                'key'   => $variable,
+                'value' => '',
             ])->values();
         $this->postmanData['variable'][] = [
             'key'   => 'url',
@@ -71,18 +71,39 @@ class GeneratePostmanCollection
     private function setItems()
     {
         $this->postmanData['item'] = collect($this->apiData)->mapToGroups(function (array $api) {
-            return [$api['group'] => $api];
-        })->map(function (Collection $group, $groupName) {
-            return [
-                "name" => str_replace('_', '', $groupName),
-                "item" => $this->formatItems($group),
+            $name = str_replace('-', '.', str_replace('_', '', $api['group']));
+            return [$name => $api];
+        })
+            ->undot()
+            ->map(function ($group, $groupName) {
+                return [
+                    'name' => str_replace('_', '', $groupName),
+                    'item' => $this->formatGroups($group),
+                ];
+            })->values();
+    }
+
+    public function formatGroups($groups)
+    {
+        if ($groups instanceof Collection) {
+            return $this->formatItems($groups);
+        }
+        if (array_is_list($groups)) {
+            return $this->formatItems($groups);
+        }
+        $items = [];
+        foreach ($groups as $groupName => $group) {
+            $items[] = [
+                'name' => $groupName,
+                'item' => $this->formatGroups($group),
             ];
-        })->values();
+        }
+        return $items;
     }
 
     private function formatItems(Collection $group): array
     {
-        return $group->map(function (array $api) {
+        return $group->sortBy('title')->map(function (array $api) {
             $item = [
                 'name'    => $api['title'],
                 'request' => [
@@ -94,6 +115,9 @@ class GeneratePostmanCollection
             $isGetRequest = \Str::upper($api['type']) == 'GET';
             $parameters = $api['parameter']['fields']['Parameter'] ?? [];
             $permission = \Str::before($api['permission'][0]['name'] ?? '', ' ');
+            preg_match_all('/:(?<params>\w+)/m', $api['url'], $pathParameters);
+            $pathParameters = $pathParameters['params'];
+            $parameters = array_filter($parameters, fn($parameter) => !in_array($parameter['field'], $pathParameters));
             if ($isGetRequest) {
                 $item['request']['url'] .= $this->formatQueryString($parameters);
             } else {
@@ -123,7 +147,7 @@ class GeneratePostmanCollection
             }
 
             return $item;
-        })->toArray();
+        })->values()->toArray();
     }
 
     private function formatFormdataParameters(array $params): array
