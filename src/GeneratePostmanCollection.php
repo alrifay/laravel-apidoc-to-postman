@@ -251,6 +251,6 @@ class GeneratePostmanCollection
                 'value'       => $header['defaultValue'] ?? '',
                 'description' => $this->toMarkdown($header['description'] ?? ''),
             ];
-        })->toArray();
+        })->values();
     }
 }
