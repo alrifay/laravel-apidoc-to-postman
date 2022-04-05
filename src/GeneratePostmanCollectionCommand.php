@@ -45,7 +45,7 @@ class GeneratePostmanCollectionCommand extends Command
         }
         $this->info('sync in progress...');
 
-        if(!Postman::syncCollection($config, $this->generator->getPostmanCollection())){
+        if (!Postman::syncCollection($config, $this->generator->getPostmanCollection())) {
             $this->error('Sync failed');
             return static::FAILURE;
         }
