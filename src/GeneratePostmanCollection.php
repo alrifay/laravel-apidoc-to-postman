@@ -62,7 +62,7 @@ class GeneratePostmanCollection
     private function setInfo()
     {
         $this->postmanData['info'] = [
-            'name'    => $this->apiProject['name'] ?? config('app.name'),
+            'name'    => $this->getCollectionName(),
             'schema'  => 'https://schema.getpostman.com/json/collection/v2.1.0/collection.json',
             'version' => (string)now()->timestamp,
         ];
@@ -105,6 +105,7 @@ class GeneratePostmanCollection
     {
         return $group->sortBy('title')->map(function (array $api) {
             $item = [
+                'id'      => $api['name'],
                 'name'    => $api['title'],
                 'request' => [
                     'method' => \Str::upper($api['type']),
@@ -252,5 +253,15 @@ class GeneratePostmanCollection
                 'description' => $this->toMarkdown($header['description'] ?? ''),
             ];
         })->values();
+    }
+
+    public function getPostmanCollection()
+    {
+        return $this->postmanData;
+    }
+
+    public function getCollectionName()
+    {
+        return $this->apiProject['name'] ?? config('app.name');
     }
 }

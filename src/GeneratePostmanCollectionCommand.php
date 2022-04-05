@@ -11,12 +11,13 @@ class GeneratePostmanCollectionCommand extends Command
     '{--out=public/doc/postman.json : Generated file path}';
 
     protected $description = 'Convert apidoc generated file to postman collection';
+    private GeneratePostmanCollection $generator;
 
     public function handle(): int
     {
         $process = new Process(['node', __DIR__ . '/generate.js'], base_path());
         $process->setEnv([
-            'NODE_PATH' => base_path('node_modules')
+            'NODE_PATH' => base_path('node_modules'),
         ]);
 
         if ($process->run() != self::SUCCESS) {
@@ -28,9 +29,28 @@ class GeneratePostmanCollectionCommand extends Command
         $result = json_decode($process->getOutput(), associative: true);
         $outputFilePath = base_path($this->option('out'));
 
-        $generator = new GeneratePostmanCollection($result['project'], $result['data']);
-        $generator->generate()->save($outputFilePath);
-        $this->info('The command was successful!');
+        $this->generator = new GeneratePostmanCollection($result['project'], $result['data']);
+        $this->generator->generate()->save($outputFilePath);
+        $this->info('Collection generated successfully!');
+
+        return $this->publishCollection();
+        return static::SUCCESS;
+    }
+
+    public function publishCollection()
+    {
+        $config = PostmanConfig::read($this, $this->generator->getCollectionName());
+        if (!$config->sync) {
+            return self::SUCCESS;
+        }
+        $this->info('sync in progress...');
+
+        if(!Postman::syncCollection($config, $this->generator->getPostmanCollection())){
+            $this->error('Sync failed');
+            return static::FAILURE;
+        }
+
+        $this->info('Collection synced successfully!');
         return static::SUCCESS;
     }
 }
